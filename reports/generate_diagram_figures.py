@@ -4,14 +4,13 @@ Generates clean, high-resolution engineering diagram graphics for FoodBridge:
 1. DFD Level 0 Context Diagram
 2. Use Case Diagram
 3. Sequence Diagram (Dual-OTP Handover)
-4. ER Diagram (Entity-Relationship Database Model)
+4. ER Diagram (Entity-Relationship Database Model - Clean Orthogonal Layout)
 """
 
 import math
 from pathlib import Path
 from PIL import Image, ImageDraw, ImageFont
 
-# Canvas & Palette Constants
 W, H = 1200, 800
 BG_COLOR = (255, 255, 255)
 WHITE = (255, 255, 255)
@@ -49,9 +48,12 @@ def generate_dfd_l0(out_path):
     img = Image.new("RGB", (W, H), color=BG_COLOR)
     draw = ImageDraw.Draw(img)
 
+    # Frame border
+    draw.rounded_rectangle([10, 10, W - 10, H - 10], radius=16, fill=WHITE, outline=BORDER_GRAY, width=2)
+
     # Title
-    draw.text((W // 2, 40), "Data Flow Diagram: Level 0 (Context Diagram)", fill=TEXT_DARK, font=FONT_TITLE, anchor="mm")
-    draw.text((W // 2, 70), "Single process interacting with 4 key external entities across surplus food relief", fill=TEXT_MUTED, font=FONT_REG, anchor="mm")
+    draw.text((W // 2, 45), "Data Flow Diagram: Level 0 (Context Diagram)", fill=TEXT_DARK, font=FONT_TITLE, anchor="mm")
+    draw.text((W // 2, 75), "Single process interacting with 4 key external entities across surplus food relief", fill=TEXT_MUTED, font=FONT_REG, anchor="mm")
 
     # Central Process Circle
     cx, cy, cr = 600, 420, 110
@@ -62,58 +64,50 @@ def generate_dfd_l0(out_path):
     draw.text((cx, cy + 40), "Engine", fill=NAVY_BLUE, font=FONT_BOLD, anchor="mm")
 
     # 4 External Entities
-    # Top Left: Donor
-    d_box = [100, 160, 340, 240]
+    d_box = [80, 160, 320, 240]
     draw.rounded_rectangle(d_box, radius=8, fill=(241, 245, 249), outline=NAVY_BLUE, width=2)
-    draw.text((220, 185), "DONOR", fill=NAVY_BLUE, font=FONT_BOLD, anchor="mm")
-    draw.text((220, 215), "(Hotel / Hostel / Banquet)", fill=TEXT_MUTED, font=FONT_SM_REG, anchor="mm")
+    draw.text((200, 185), "DONOR", fill=NAVY_BLUE, font=FONT_BOLD, anchor="mm")
+    draw.text((200, 215), "(Hotel / Hostel / Banquet)", fill=TEXT_MUTED, font=FONT_SM_REG, anchor="mm")
 
-    # Top Right: Shelter (NGO)
-    s_box = [860, 160, 1100, 240]
+    s_box = [880, 160, 1120, 240]
     draw.rounded_rectangle(s_box, radius=8, fill=(241, 245, 249), outline=NAVY_BLUE, width=2)
-    draw.text((980, 185), "SHELTER (NGO)", fill=NAVY_BLUE, font=FONT_BOLD, anchor="mm")
-    draw.text((980, 215), "(Verified Darpan Recipient)", fill=TEXT_MUTED, font=FONT_SM_REG, anchor="mm")
+    draw.text((1000, 185), "SHELTER (NGO)", fill=NAVY_BLUE, font=FONT_BOLD, anchor="mm")
+    draw.text((1000, 215), "(Verified Darpan Recipient)", fill=TEXT_MUTED, font=FONT_SM_REG, anchor="mm")
 
-    # Bottom Left: Volunteer Courier
-    v_box = [100, 600, 340, 680]
+    v_box = [80, 600, 320, 680]
     draw.rounded_rectangle(v_box, radius=8, fill=(241, 245, 249), outline=NAVY_BLUE, width=2)
-    draw.text((220, 625), "VOLUNTEER COURIER", fill=NAVY_BLUE, font=FONT_BOLD, anchor="mm")
-    draw.text((220, 655), "(Grassroots Dispatch)", fill=TEXT_MUTED, font=FONT_SM_REG, anchor="mm")
+    draw.text((200, 625), "VOLUNTEER COURIER", fill=NAVY_BLUE, font=FONT_BOLD, anchor="mm")
+    draw.text((200, 655), "(Grassroots Dispatch)", fill=TEXT_MUTED, font=FONT_SM_REG, anchor="mm")
 
-    # Bottom Right: System Administrator
-    a_box = [860, 600, 1100, 680]
+    a_box = [880, 600, 1120, 680]
     draw.rounded_rectangle(a_box, radius=8, fill=(241, 245, 249), outline=NAVY_BLUE, width=2)
-    draw.text((980, 625), "SYSTEM ADMIN", fill=NAVY_BLUE, font=FONT_BOLD, anchor="mm")
-    draw.text((980, 655), "(Governance & Telemetry)", fill=TEXT_MUTED, font=FONT_SM_REG, anchor="mm")
+    draw.text((1000, 625), "SYSTEM ADMIN", fill=NAVY_BLUE, font=FONT_BOLD, anchor="mm")
+    draw.text((1000, 655), "(Governance & Telemetry)", fill=TEXT_MUTED, font=FONT_SM_REG, anchor="mm")
 
-    # Connecting Arrows & Data Flow Labels
-    # Donor <-> Sys
-    draw_arrow(draw, (340, 190), (510, 350), color=BRAND_GREEN, width=2)
-    draw.text((400, 250), "1. Listing details (quantity, expiry)", fill=BRAND_GREEN, font=FONT_SM_BOLD, anchor="rm")
+    # Flows
+    draw_arrow(draw, (320, 190), (510, 350), color=BRAND_GREEN, width=2)
+    draw.text((390, 250), "1. Listing details (quantity, expiry)", fill=BRAND_GREEN, font=FONT_SM_BOLD, anchor="rm")
 
-    draw_arrow(draw, (500, 380), (340, 220), color=ACCENT_BLUE, width=2)
-    draw.text((400, 310), "2. Listing ID & Pickup OTP", fill=ACCENT_BLUE, font=FONT_SM_BOLD, anchor="rm")
+    draw_arrow(draw, (500, 380), (320, 220), color=ACCENT_BLUE, width=2)
+    draw.text((390, 310), "2. Listing ID & Pickup OTP", fill=ACCENT_BLUE, font=FONT_SM_BOLD, anchor="rm")
 
-    # Shelter <-> Sys
-    draw_arrow(draw, (860, 190), (690, 350), color=BRAND_GREEN, width=2)
-    draw.text((800, 250), "3. Darpan ID & Claim Request", fill=BRAND_GREEN, font=FONT_SM_BOLD, anchor="lm")
+    draw_arrow(draw, (880, 190), (690, 350), color=BRAND_GREEN, width=2)
+    draw.text((810, 250), "3. Darpan ID & Claim Request", fill=BRAND_GREEN, font=FONT_SM_BOLD, anchor="lm")
 
-    draw_arrow(draw, (700, 380), (860, 220), color=ACCENT_BLUE, width=2)
-    draw.text((800, 310), "4. Approved Notice & Delivery OTP", fill=ACCENT_BLUE, font=FONT_SM_BOLD, anchor="lm")
+    draw_arrow(draw, (700, 380), (880, 220), color=ACCENT_BLUE, width=2)
+    draw.text((810, 310), "4. Approved Notice & Delivery OTP", fill=ACCENT_BLUE, font=FONT_SM_BOLD, anchor="lm")
 
-    # Volunteer <-> Sys
-    draw_arrow(draw, (340, 620), (500, 470), color=BRAND_GREEN, width=2)
-    draw.text((400, 530), "5. Task Accept & Entered OTPs", fill=BRAND_GREEN, font=FONT_SM_BOLD, anchor="rm")
+    draw_arrow(draw, (320, 620), (500, 470), color=BRAND_GREEN, width=2)
+    draw.text((390, 530), "5. Task Accept & Entered OTPs", fill=BRAND_GREEN, font=FONT_SM_BOLD, anchor="rm")
 
-    draw_arrow(draw, (510, 495), (340, 650), color=ACCENT_BLUE, width=2)
-    draw.text((400, 590), "6. Dispatch Route & Navigation", fill=ACCENT_BLUE, font=FONT_SM_BOLD, anchor="rm")
+    draw_arrow(draw, (510, 495), (320, 650), color=ACCENT_BLUE, width=2)
+    draw.text((390, 590), "6. Dispatch Route & Navigation", fill=ACCENT_BLUE, font=FONT_SM_BOLD, anchor="rm")
 
-    # Admin <-> Sys
-    draw_arrow(draw, (860, 620), (700, 470), color=BRAND_GREEN, width=2)
-    draw.text((800, 530), "7. NGO Accreditation Decisions", fill=BRAND_GREEN, font=FONT_SM_BOLD, anchor="lm")
+    draw_arrow(draw, (880, 620), (700, 470), color=BRAND_GREEN, width=2)
+    draw.text((810, 530), "7. NGO Accreditation Decisions", fill=BRAND_GREEN, font=FONT_SM_BOLD, anchor="lm")
 
-    draw_arrow(draw, (690, 495), (860, 650), color=ACCENT_BLUE, width=2)
-    draw.text((800, 590), "8. Real-time KPIs & Audit Logs", fill=ACCENT_BLUE, font=FONT_SM_BOLD, anchor="lm")
+    draw_arrow(draw, (690, 495), (880, 650), color=ACCENT_BLUE, width=2)
+    draw.text((810, 590), "8. Real-time KPIs & Audit Logs", fill=ACCENT_BLUE, font=FONT_SM_BOLD, anchor="lm")
 
     img.save(out_path, quality=95)
     print(f"[OK] Generated: {out_path}")
@@ -122,38 +116,35 @@ def generate_use_case(out_path):
     img = Image.new("RGB", (W, H), color=BG_COLOR)
     draw = ImageDraw.Draw(img)
 
+    # Frame border
+    draw.rounded_rectangle([10, 10, W - 10, H - 10], radius=16, fill=WHITE, outline=BORDER_GRAY, width=2)
+
     # Title
-    draw.text((W // 2, 35), "Use Case Diagram: System Boundary & Primary Actors", fill=TEXT_DARK, font=FONT_TITLE, anchor="mm")
+    draw.text((W // 2, 40), "Use Case Diagram: System Boundary & Primary Actors", fill=TEXT_DARK, font=FONT_TITLE, anchor="mm")
 
-    # System Boundary Box
-    sb_box = [340, 75, 860, 755]
-    draw.rounded_rectangle(sb_box, radius=12, fill=(255, 255, 255), outline=BORDER_GRAY, width=2)
-    draw.text((600, 100), "FOODBRIDGE SYSTEM BOUNDARY", fill=BRAND_GREEN, font=FONT_SM_BOLD, anchor="mm")
+    # Boundary
+    draw.rounded_rectangle([320, 80, 880, 760], radius=12, fill=(250, 250, 250), outline=BORDER_GRAY, width=2)
+    draw.text((600, 105), "FOODBRIDGE SYSTEM BOUNDARY", fill=BRAND_GREEN, font=FONT_SM_BOLD, anchor="mm")
 
-    # Actors (Left: Donor & Shelter; Right: Volunteer & Admin)
-    # Actor 1: Donor
-    draw.rounded_rectangle([60, 160, 260, 240], radius=8, fill=BRAND_GREEN_BG, outline=BRAND_GREEN, width=2)
-    draw.text((160, 185), "Donor", fill=NAVY_BLUE, font=FONT_BOLD, anchor="mm")
-    draw.text((160, 215), "(Hotel / Hostel)", fill=TEXT_MUTED, font=FONT_SM_REG, anchor="mm")
+    # Actors
+    draw.rounded_rectangle([40, 160, 240, 240], radius=8, fill=BRAND_GREEN_BG, outline=BRAND_GREEN, width=2)
+    draw.text((140, 185), "Donor", fill=NAVY_BLUE, font=FONT_BOLD, anchor="mm")
+    draw.text((140, 215), "(Hotel / Hostel)", fill=TEXT_MUTED, font=FONT_SM_REG, anchor="mm")
 
-    # Actor 2: Shelter NGO
-    draw.rounded_rectangle([60, 520, 260, 600], radius=8, fill=ACCENT_BLUE_BG, outline=ACCENT_BLUE, width=2)
-    draw.text((160, 545), "Shelter (NGO)", fill=NAVY_BLUE, font=FONT_BOLD, anchor="mm")
-    draw.text((160, 575), "(Verified Recipient)", fill=TEXT_MUTED, font=FONT_SM_REG, anchor="mm")
+    draw.rounded_rectangle([40, 520, 240, 600], radius=8, fill=ACCENT_BLUE_BG, outline=ACCENT_BLUE, width=2)
+    draw.text((140, 545), "Shelter (NGO)", fill=NAVY_BLUE, font=FONT_BOLD, anchor="mm")
+    draw.text((140, 575), "(Verified Recipient)", fill=TEXT_MUTED, font=FONT_SM_REG, anchor="mm")
 
-    # Actor 3: Volunteer Courier
-    draw.rounded_rectangle([940, 160, 1140, 240], radius=8, fill=ACCENT_AMBER_BG, outline=ACCENT_AMBER, width=2)
-    draw.text((1040, 185), "Volunteer Courier", fill=NAVY_BLUE, font=FONT_BOLD, anchor="mm")
-    draw.text((1040, 215), "(Field Dispatch)", fill=TEXT_MUTED, font=FONT_SM_REG, anchor="mm")
+    draw.rounded_rectangle([960, 160, 1160, 240], radius=8, fill=ACCENT_AMBER_BG, outline=ACCENT_AMBER, width=2)
+    draw.text((1060, 185), "Volunteer Courier", fill=NAVY_BLUE, font=FONT_BOLD, anchor="mm")
+    draw.text((1060, 215), "(Field Dispatch)", fill=TEXT_MUTED, font=FONT_SM_REG, anchor="mm")
 
-    # Actor 4: System Admin
-    draw.rounded_rectangle([940, 520, 1140, 600], radius=8, fill=ACCENT_PURPLE_BG, outline=ACCENT_PURPLE, width=2)
-    draw.text((1040, 545), "System Admin", fill=NAVY_BLUE, font=FONT_BOLD, anchor="mm")
-    draw.text((1040, 575), "(Platform Governance)", fill=TEXT_MUTED, font=FONT_SM_REG, anchor="mm")
+    draw.rounded_rectangle([960, 520, 1160, 600], radius=8, fill=ACCENT_PURPLE_BG, outline=ACCENT_PURPLE, width=2)
+    draw.text((1060, 545), "System Admin", fill=NAVY_BLUE, font=FONT_BOLD, anchor="mm")
+    draw.text((1060, 575), "(Platform Governance)", fill=TEXT_MUTED, font=FONT_SM_REG, anchor="mm")
 
-    # Use Cases (Ellipses in Center)
     use_cases = [
-        ("UC-01: Login & 2FA Auth", 150),
+        ("UC-01: Login & 2FA Auth", 155),
         ("UC-02: Declare Surplus Food", 225),
         ("UC-03: <<include>> Sign Safety Charter", 295),
         ("UC-04: Submit Darpan / 80G Docs", 365),
@@ -167,32 +158,26 @@ def generate_use_case(out_path):
         is_sub = "include" in text
         fill_col = (240, 253, 244) if not is_sub else (254, 243, 199)
         out_col = BRAND_GREEN if not is_sub else ACCENT_AMBER
-        draw.rounded_rectangle([420, y - 22, 780, y + 22], radius=20, fill=fill_col, outline=out_col, width=1)
+        draw.rounded_rectangle([400, y - 20, 800, y + 20], radius=20, fill=fill_col, outline=out_col, width=1)
         draw.text((600, y), text, fill=TEXT_DARK, font=FONT_SM_BOLD, anchor="mm")
 
-    # Connecting association lines
-    # Donor to UC-01, UC-02
-    draw.line([260, 200, 420, 150], fill=TEXT_MUTED, width=1)
-    draw.line([260, 200, 420, 225], fill=TEXT_MUTED, width=1)
-    # <<include>> UC-02 to UC-03
-    draw.line([600, 247, 600, 273], fill=ACCENT_AMBER, width=2)
+    draw.line([240, 200, 400, 155], fill=TEXT_MUTED, width=1)
+    draw.line([240, 200, 400, 225], fill=TEXT_MUTED, width=1)
+    draw.line([600, 245, 600, 275], fill=ACCENT_AMBER, width=2)
 
-    # Shelter to UC-01, UC-04, UC-05, UC-08
-    draw.line([260, 560, 420, 150], fill=TEXT_MUTED, width=1)
-    draw.line([260, 560, 420, 365], fill=TEXT_MUTED, width=1)
-    draw.line([260, 560, 420, 435], fill=TEXT_MUTED, width=1)
-    draw.line([260, 560, 420, 645], fill=TEXT_MUTED, width=1)
+    draw.line([240, 560, 400, 155], fill=TEXT_MUTED, width=1)
+    draw.line([240, 560, 400, 365], fill=TEXT_MUTED, width=1)
+    draw.line([240, 560, 400, 435], fill=TEXT_MUTED, width=1)
+    draw.line([240, 560, 400, 645], fill=TEXT_MUTED, width=1)
 
-    # Volunteer to UC-01, UC-06, UC-07, UC-08
-    draw.line([940, 200, 780, 150], fill=TEXT_MUTED, width=1)
-    draw.line([940, 200, 780, 505], fill=TEXT_MUTED, width=1)
-    draw.line([940, 200, 780, 575], fill=TEXT_MUTED, width=1)
-    draw.line([940, 200, 780, 645], fill=TEXT_MUTED, width=1)
+    draw.line([960, 200, 800, 155], fill=TEXT_MUTED, width=1)
+    draw.line([960, 200, 800, 505], fill=TEXT_MUTED, width=1)
+    draw.line([960, 200, 800, 575], fill=TEXT_MUTED, width=1)
+    draw.line([960, 200, 800, 645], fill=TEXT_MUTED, width=1)
 
-    # Admin to UC-01, UC-04, UC-09
-    draw.line([940, 560, 780, 150], fill=TEXT_MUTED, width=1)
-    draw.line([940, 560, 780, 365], fill=TEXT_MUTED, width=1)
-    draw.line([940, 560, 780, 715], fill=TEXT_MUTED, width=1)
+    draw.line([960, 560, 800, 155], fill=TEXT_MUTED, width=1)
+    draw.line([960, 560, 800, 365], fill=TEXT_MUTED, width=1)
+    draw.line([960, 560, 800, 715], fill=TEXT_MUTED, width=1)
 
     img.save(out_path, quality=95)
     print(f"[OK] Generated: {out_path}")
@@ -201,10 +186,12 @@ def generate_sequence(out_path):
     img = Image.new("RGB", (W, H), color=BG_COLOR)
     draw = ImageDraw.Draw(img)
 
-    # Title
-    draw.text((W // 2, 35), "Sequence Diagram: Real-Time Dual-OTP Handover Lifecycle", fill=TEXT_DARK, font=FONT_TITLE, anchor="mm")
+    # Frame border
+    draw.rounded_rectangle([10, 10, W - 10, H - 10], radius=16, fill=WHITE, outline=BORDER_GRAY, width=2)
 
-    # 4 Lifelines
+    # Title
+    draw.text((W // 2, 40), "Sequence Diagram: Real-Time Dual-OTP Handover Lifecycle", fill=TEXT_DARK, font=FONT_TITLE, anchor="mm")
+
     cols = [
         ("Donor Client", 180, BRAND_GREEN_BG, BRAND_GREEN),
         ("Supabase Cloud / DB", 460, ACCENT_BLUE_BG, ACCENT_BLUE),
@@ -212,27 +199,25 @@ def generate_sequence(out_path):
         ("Shelter (NGO) App", 1020, ACCENT_PURPLE_BG, ACCENT_PURPLE)
     ]
     for title, x, bg_c, out_c in cols:
-        draw.rounded_rectangle([x - 90, 80, x + 90, 130], radius=8, fill=bg_c, outline=out_c, width=2)
-        draw.text((x, 105), title, fill=NAVY_BLUE, font=FONT_BOLD, anchor="mm")
-        # Dashed lifeline
-        for y in range(140, 740, 15):
+        draw.rounded_rectangle([x - 85, 80, x + 85, 125], radius=8, fill=bg_c, outline=out_c, width=2)
+        draw.text((x, 102), title, fill=NAVY_BLUE, font=FONT_BOLD, anchor="mm")
+        for y in range(135, 745, 15):
             draw.line([x, y, x, y + 8], fill=BORDER_GRAY, width=2)
 
-    # Message Sequence Flows
     flows = [
-        (180, 460, 180, "1. postSurplus(meals, expiry) -> creates listing", BRAND_GREEN),
-        (460, 180, 230, "2. returnPickupOTP(hash) -> display on donor phone", ACCENT_BLUE),
-        (460, 740, 290, "3. WebSocket push: new_donation_broadcast (<80ms)", ACCENT_AMBER),
-        (460, 1020, 350, "4. WebSocket push: incoming_surplus_alert", ACCENT_PURPLE),
-        (1020, 460, 410, "5. reserveClaim(portions) -> generate delivery OTP", ACCENT_PURPLE),
-        (740, 460, 470, "6. acceptDispatchTask() -> lock courier assignment", ACCENT_AMBER),
+        (180, 460, 175, "1. postSurplus(meals, expiry) -> creates listing", BRAND_GREEN),
+        (460, 180, 235, "2. returnPickupOTP(hash) -> display on donor phone", ACCENT_BLUE),
+        (460, 740, 295, "3. WebSocket push: new_donation_broadcast (<80ms)", ACCENT_AMBER),
+        (460, 1020, 355, "4. WebSocket push: incoming_surplus_alert", ACCENT_PURPLE),
+        (1020, 460, 415, "5. reserveClaim(portions) -> generate delivery OTP", ACCENT_PURPLE),
+        (740, 460, 475, "6. acceptDispatchTask() -> lock courier assignment", ACCENT_AMBER),
         (740, 460, 540, "7. verifyPickupOTP(otp) -> status -> IN_TRANSIT", BRAND_GREEN),
-        (1020, 460, 610, "8. verifyDeliveryOTP(otp) -> status -> DELIVERED", ACCENT_BLUE),
-        (460, 460, 680, "9. recordImmutableAuditLog(timestamp, hashes, IDs)", NAVY_BLUE)
+        (1020, 460, 605, "8. verifyDeliveryOTP(otp) -> status -> DELIVERED", ACCENT_BLUE),
+        (460, 460, 675, "9. recordImmutableAuditLog(timestamp, hashes, IDs)", NAVY_BLUE)
     ]
 
     for x1, x2, y, msg, colr in flows:
-        if x1 == x2: # Self-call
+        if x1 == x2:
             draw.rectangle([x1 - 10, y - 10, x1 + 10, y + 25], fill=(226, 232, 240), outline=NAVY_BLUE)
             draw.line([x1, y - 5, x1 + 40, y - 5], fill=NAVY_BLUE, width=2)
             draw.line([x1 + 40, y - 5, x1 + 40, y + 20], fill=NAVY_BLUE, width=2)
@@ -250,14 +235,17 @@ def generate_er(out_path):
     img = Image.new("RGB", (W, H), color=BG_COLOR)
     draw = ImageDraw.Draw(img)
 
-    # Title
-    draw.text((W // 2, 35), "Database Schema: Entity Relationship (ER) Model", fill=TEXT_DARK, font=FONT_TITLE, anchor="mm")
+    # Frame border
+    draw.rounded_rectangle([10, 10, W - 10, H - 10], radius=16, fill=WHITE, outline=BORDER_GRAY, width=2)
 
-    # Table 1: USERS
-    u_box = [100, 100, 450, 380]
+    # Title
+    draw.text((W // 2, 40), "Database Schema: Entity Relationship (ER) Model", fill=TEXT_DARK, font=FONT_TITLE, anchor="mm")
+
+    # Table 1: USERS (Top Left)
+    u_box = [60, 80, 480, 360]
     draw.rounded_rectangle(u_box, radius=8, fill=WHITE, outline=BRAND_GREEN, width=2)
-    draw.rectangle([100, 100, 450, 140], fill=BRAND_GREEN)
-    draw.text((275, 120), "USERS (Profiles & Roles)", fill=WHITE, font=FONT_BOLD, anchor="mm")
+    draw.rectangle([60, 80, 480, 115], fill=BRAND_GREEN)
+    draw.text((270, 97), "USERS (Profiles & Authentication)", fill=WHITE, font=FONT_BOLD, anchor="mm")
     u_fields = [
         ("PK", "id", "UUID (auth.users)"),
         (" ", "email", "VARCHAR(255) UNIQUE"),
@@ -268,16 +256,16 @@ def generate_er(out_path):
         (" ", "created_at", "TIMESTAMPTZ DEFAULT NOW()")
     ]
     for i, (k, col, typ) in enumerate(u_fields):
-        y = 165 + i * 28
-        draw.text((120, y), k, fill=ACCENT_AMBER if k == "PK" else TEXT_MUTED, font=FONT_SM_BOLD)
-        draw.text((160, y), col, fill=TEXT_DARK, font=FONT_SM_BOLD)
-        draw.text((320, y), typ, fill=TEXT_MUTED, font=FONT_SM_REG)
+        y = 135 + i * 28
+        draw.text((80, y), k, fill=ACCENT_AMBER if k == "PK" else TEXT_MUTED, font=FONT_SM_BOLD)
+        draw.text((120, y), col, fill=TEXT_DARK, font=FONT_SM_BOLD)
+        draw.text((310, y), typ, fill=TEXT_MUTED, font=FONT_SM_REG)
 
-    # Table 2: DONATIONS
-    d_box = [750, 100, 1100, 410]
+    # Table 2: DONATIONS (Top Right)
+    d_box = [720, 80, 1140, 390]
     draw.rounded_rectangle(d_box, radius=8, fill=WHITE, outline=ACCENT_BLUE, width=2)
-    draw.rectangle([750, 100, 1100, 140], fill=ACCENT_BLUE)
-    draw.text((925, 120), "DONATIONS (Surplus Postings)", fill=WHITE, font=FONT_BOLD, anchor="mm")
+    draw.rectangle([720, 80, 1140, 115], fill=ACCENT_BLUE)
+    draw.text((930, 97), "DONATIONS (Surplus Postings)", fill=WHITE, font=FONT_BOLD, anchor="mm")
     d_fields = [
         ("PK", "id", "UUID DEFAULT gen_random_uuid()"),
         ("FK", "donor_id", "UUID -> users.id"),
@@ -289,16 +277,16 @@ def generate_er(out_path):
         (" ", "created_at", "TIMESTAMPTZ DEFAULT NOW()")
     ]
     for i, (k, col, typ) in enumerate(d_fields):
-        y = 165 + i * 28
-        draw.text((770, y), k, fill=ACCENT_AMBER if "K" in k else TEXT_MUTED, font=FONT_SM_BOLD)
-        draw.text((810, y), col, fill=TEXT_DARK, font=FONT_SM_BOLD)
+        y = 135 + i * 28
+        draw.text((740, y), k, fill=ACCENT_AMBER if "K" in k else TEXT_MUTED, font=FONT_SM_BOLD)
+        draw.text((780, y), col, fill=TEXT_DARK, font=FONT_SM_BOLD)
         draw.text((970, y), typ, fill=TEXT_MUTED, font=FONT_SM_REG)
 
-    # Table 3: DELIVERIES
-    del_box = [100, 470, 450, 750]
+    # Table 3: DELIVERIES (Bottom Right)
+    del_box = [720, 460, 1140, 740]
     draw.rounded_rectangle(del_box, radius=8, fill=WHITE, outline=ACCENT_AMBER, width=2)
-    draw.rectangle([100, 470, 450, 510], fill=ACCENT_AMBER)
-    draw.text((275, 490), "DELIVERIES (Logistics Handover)", fill=WHITE, font=FONT_BOLD, anchor="mm")
+    draw.rectangle([720, 460, 1140, 495], fill=ACCENT_AMBER)
+    draw.text((930, 477), "DELIVERIES (Logistics Handover)", fill=WHITE, font=FONT_BOLD, anchor="mm")
     del_fields = [
         ("PK", "id", "UUID DEFAULT gen_random_uuid()"),
         ("FK", "donation_id", "UUID -> donations.id"),
@@ -310,16 +298,16 @@ def generate_er(out_path):
         (" ", "delivery_otp_hash", "VARCHAR(64) NOT NULL")
     ]
     for i, (k, col, typ) in enumerate(del_fields):
-        y = 535 + i * 26
-        draw.text((120, y), k, fill=ACCENT_AMBER if "K" in k else TEXT_MUTED, font=FONT_SM_BOLD)
-        draw.text((160, y), col, fill=TEXT_DARK, font=FONT_SM_BOLD)
-        draw.text((320, y), typ, fill=TEXT_MUTED, font=FONT_SM_REG)
+        y = 515 + i * 26
+        draw.text((740, y), k, fill=ACCENT_AMBER if "K" in k else TEXT_MUTED, font=FONT_SM_BOLD)
+        draw.text((780, y), col, fill=TEXT_DARK, font=FONT_SM_BOLD)
+        draw.text((970, y), typ, fill=TEXT_MUTED, font=FONT_SM_REG)
 
-    # Table 4: AUDIT_LOGS
-    a_box = [750, 470, 1100, 750]
+    # Table 4: AUDIT_LOGS (Bottom Left)
+    a_box = [60, 460, 480, 740]
     draw.rounded_rectangle(a_box, radius=8, fill=WHITE, outline=ACCENT_PURPLE, width=2)
-    draw.rectangle([750, 470, 1100, 510], fill=ACCENT_PURPLE)
-    draw.text((925, 490), "AUDIT_LOGS (Immutable Governance)", fill=WHITE, font=FONT_BOLD, anchor="mm")
+    draw.rectangle([60, 460, 480, 495], fill=ACCENT_PURPLE)
+    draw.text((270, 477), "AUDIT_LOGS (Immutable Governance)", fill=WHITE, font=FONT_BOLD, anchor="mm")
     a_fields = [
         ("PK", "id", "BIGSERIAL"),
         ("FK", "actor_id", "UUID -> users.id"),
@@ -330,23 +318,27 @@ def generate_er(out_path):
         (" ", "metadata", "JSONB structured payload")
     ]
     for i, (k, col, typ) in enumerate(a_fields):
-        y = 535 + i * 28
-        draw.text((770, y), k, fill=ACCENT_AMBER if "K" in k else TEXT_MUTED, font=FONT_SM_BOLD)
-        draw.text((810, y), col, fill=TEXT_DARK, font=FONT_SM_BOLD)
-        draw.text((970, y), typ, fill=TEXT_MUTED, font=FONT_SM_REG)
+        y = 520 + i * 28
+        draw.text((80, y), k, fill=ACCENT_AMBER if "K" in k else TEXT_MUTED, font=FONT_SM_BOLD)
+        draw.text((120, y), col, fill=TEXT_DARK, font=FONT_SM_BOLD)
+        draw.text((310, y), typ, fill=TEXT_MUTED, font=FONT_SM_REG)
 
-    # Relationships Connectors
-    # USERS -> DONATIONS (1:N)
-    draw_arrow(draw, (450, 200), (750, 200), color=TEXT_MUTED, width=2)
-    draw.text((600, 185), "1 : N (Submits)", fill=TEXT_DARK, font=FONT_SM_BOLD, anchor="mm")
+    # Clean Orthogonal Connectors
+    # 1. USERS -> DONATIONS (Horizontal top)
+    draw_arrow(draw, (480, 200), (720, 200), color=BRAND_GREEN, width=2)
+    draw.text((600, 185), "1 : N (Submits)", fill=BRAND_GREEN, font=FONT_SM_BOLD, anchor="mm")
 
-    # DONATIONS -> DELIVERIES (1:1)
-    draw_arrow(draw, (850, 410), (350, 470), color=TEXT_MUTED, width=2)
-    draw.text((580, 430), "1 : 1 (Dispatches)", fill=TEXT_DARK, font=FONT_SM_BOLD, anchor="mm")
+    # 2. DONATIONS -> DELIVERIES (Vertical right)
+    draw_arrow(draw, (930, 390), (930, 460), color=ACCENT_BLUE, width=2)
+    draw.text((980, 425), "1 : 1 (Dispatches)", fill=ACCENT_BLUE, font=FONT_SM_BOLD, anchor="lm")
 
-    # USERS -> AUDIT_LOGS (1:N)
-    draw_arrow(draw, (450, 280), (750, 580), color=TEXT_MUTED, width=2)
-    draw.text((580, 360), "1 : N (Audits)", fill=TEXT_DARK, font=FONT_SM_BOLD, anchor="mm")
+    # 3. USERS -> AUDIT_LOGS (Vertical left)
+    draw_arrow(draw, (270, 360), (270, 460), color=ACCENT_PURPLE, width=2)
+    draw.text((220, 410), "1 : N (Audits)", fill=ACCENT_PURPLE, font=FONT_SM_BOLD, anchor="rm")
+
+    # 4. USERS -> DELIVERIES (Orthogonal link across)
+    draw_arrow(draw, (480, 260), (720, 560), color=TEXT_MUTED, width=2)
+    draw.text((600, 400), "1 : N (Fulfills)", fill=TEXT_MUTED, font=FONT_SM_BOLD, anchor="mm")
 
     img.save(out_path, quality=95)
     print(f"[OK] Generated: {out_path}")

@@ -861,8 +861,7 @@ def create_deck(output_pptx_path):
     # Embed High-Resolution DFD Level 0 Diagram on Left
     dfd_img_path = fig_dir / "diagram_dfd_l0.png"
     if dfd_img_path.exists():
-        card_dfd_img = add_card(s12, Inches(0.8), Inches(1.85), Inches(6.8), Inches(4.95), WHITE, CARD_BORDER)
-        s12.shapes.add_picture(str(dfd_img_path), Inches(0.9), Inches(1.95), width=Inches(6.6))
+        s12.shapes.add_picture(str(dfd_img_path), Inches(0.8), Inches(1.85), width=Inches(6.8))
 
     # Right: DFD Level 1 Process Breakdown
     c_dfd1 = add_card(s12, Inches(7.8), Inches(1.85), Inches(4.733), Inches(4.95), WHITE, CARD_BORDER)
@@ -883,11 +882,13 @@ def create_deck(output_pptx_path):
     ]
     for proc, desc in dfd1_procs:
         p_pr = tf_d1.add_paragraph()
-        p_pr.text = f"\n• {proc}:"
+        p_pr.space_before = Pt(4)
+        p_pr.text = f"• {proc}:"
         p_pr.font.bold = True
         p_pr.font.size = Pt(9.5)
         p_pr.font.color.rgb = TEXT_DARK
         p_pd = tf_d1.add_paragraph()
+        p_pd.space_after = Pt(2)
         p_pd.text = f"  {desc}"
         p_pd.font.size = Pt(8.5)
         p_pd.font.color.rgb = TEXT_MUTED
@@ -905,8 +906,7 @@ def create_deck(output_pptx_path):
     # Embed Use Case Diagram on Left
     uc_img_path = fig_dir / "diagram_use_case.png"
     if uc_img_path.exists():
-        card_uc_img = add_card(s13, Inches(0.8), Inches(1.85), Inches(6.8), Inches(4.95), WHITE, CARD_BORDER)
-        s13.shapes.add_picture(str(uc_img_path), Inches(0.9), Inches(1.95), width=Inches(6.6))
+        s13.shapes.add_picture(str(uc_img_path), Inches(0.8), Inches(1.85), width=Inches(6.8))
 
     # Right: Detailed Actor Mapping
     c_uc_desc = add_card(s13, Inches(7.8), Inches(1.85), Inches(4.733), Inches(4.95), WHITE, CARD_BORDER)
@@ -925,11 +925,13 @@ def create_deck(output_pptx_path):
     ]
     for act, desc in actor_breakdown:
         p_a = tf_ucd.add_paragraph()
-        p_a.text = f"\n• {act}:"
+        p_a.space_before = Pt(8)
+        p_a.text = f"• {act}:"
         p_a.font.bold = True
         p_a.font.size = Pt(10)
         p_a.font.color.rgb = TEXT_DARK
         p_d = tf_ucd.add_paragraph()
+        p_d.space_after = Pt(4)
         p_d.text = f"  {desc}"
         p_d.font.size = Pt(9)
         p_d.font.color.rgb = TEXT_MUTED
@@ -947,8 +949,7 @@ def create_deck(output_pptx_path):
     # Embed Sequence Diagram on Left
     seq_img_path = fig_dir / "diagram_sequence.png"
     if seq_img_path.exists():
-        card_sq_img = add_card(s14, Inches(0.8), Inches(1.85), Inches(6.8), Inches(4.95), WHITE, CARD_BORDER)
-        s14.shapes.add_picture(str(seq_img_path), Inches(0.9), Inches(1.95), width=Inches(6.6))
+        s14.shapes.add_picture(str(seq_img_path), Inches(0.8), Inches(1.85), width=Inches(6.8))
 
     # Right: Sequence Execution Steps
     c_sq_desc = add_card(s14, Inches(7.8), Inches(1.85), Inches(4.733), Inches(4.95), WHITE, CARD_BORDER)
@@ -969,11 +970,13 @@ def create_deck(output_pptx_path):
     ]
     for s_title, s_desc in seq_breakdown:
         p_s = tf_sqd.add_paragraph()
-        p_s.text = f"\n• {s_title}:"
+        p_s.space_before = Pt(4)
+        p_s.text = f"• {s_title}:"
         p_s.font.bold = True
         p_s.font.size = Pt(9.5)
         p_s.font.color.rgb = TEXT_DARK
         p_sd = tf_sqd.add_paragraph()
+        p_sd.space_after = Pt(2)
         p_sd.text = f"  {s_desc}"
         p_sd.font.size = Pt(8.5)
         p_sd.font.color.rgb = TEXT_MUTED
@@ -991,8 +994,7 @@ def create_deck(output_pptx_path):
     # Embed ER Diagram on Left
     er_img_path = fig_dir / "diagram_er.png"
     if er_img_path.exists():
-        card_er_img = add_card(s15, Inches(0.8), Inches(1.85), Inches(6.8), Inches(4.95), WHITE, CARD_BORDER)
-        s15.shapes.add_picture(str(er_img_path), Inches(0.9), Inches(1.95), width=Inches(6.6))
+        s15.shapes.add_picture(str(er_img_path), Inches(0.8), Inches(1.85), width=Inches(6.8))
 
     # Right: Data Governance & Security Rules
     c_er_desc = add_card(s15, Inches(7.8), Inches(1.85), Inches(4.733), Inches(4.95), WHITE, CARD_BORDER)
@@ -1011,11 +1013,13 @@ def create_deck(output_pptx_path):
     ]
     for e_title, e_desc in er_breakdown:
         p_et = tf_erd.add_paragraph()
-        p_et.text = f"\n• {e_title}:"
+        p_et.space_before = Pt(6)
+        p_et.text = f"• {e_title}:"
         p_et.font.bold = True
         p_et.font.size = Pt(9.5)
         p_et.font.color.rgb = TEXT_DARK
         p_ed = tf_erd.add_paragraph()
+        p_ed.space_after = Pt(3)
         p_ed.text = f"  {e_desc}"
         p_ed.font.size = Pt(8.5)
         p_ed.font.color.rgb = TEXT_MUTED
