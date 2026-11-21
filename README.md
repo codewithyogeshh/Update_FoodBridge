@@ -18,6 +18,8 @@
 
 > 📁 **Demo source:** [`demo/`](demo/) &nbsp;·&nbsp; the exact `index.html`, `app.css` and `app.js` served at the live link above, with a `worker.js` + `manifest.json` deploy config. Open `demo/index.html` directly in a browser to run it — no install, no backend, simulated data only.
 
+> 📱 **Android APK:** [**Download the latest APK**](https://github.com/codewithyogeshh/Update_FoodBridge/releases/latest) &nbsp;·&nbsp; built by GitHub Actions from this repository and installable on any Android phone — no Play Store, no Flutter setup. Tap the downloaded file and allow "install from this source" once when Android asks. (Debug-signed build, meant for testing, not for Play Store upload.)
+
 ---
 
 ## 📱 Visual Showcase & Application Screenshots
