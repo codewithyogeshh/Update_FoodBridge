@@ -16,6 +16,8 @@
 
 > ℹ️ The live link is an interactive browser demo of the same four role flows (Donor, NGO Shelter, Volunteer Courier, Super Admin), built for one-click evaluation. It runs on **simulated data** in the browser; the Flutter app in this repository is the real implementation backed by Supabase.
 
+> 📁 **Demo source:** [`demo/`](demo/) &nbsp;·&nbsp; the exact `index.html`, `app.css` and `app.js` served at the live link above, with a `worker.js` + `manifest.json` deploy config. Open `demo/index.html` directly in a browser to run it — no install, no backend, simulated data only.
+
 ---
 
 ## 📱 Visual Showcase & Application Screenshots
