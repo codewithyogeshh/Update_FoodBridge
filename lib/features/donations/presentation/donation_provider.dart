@@ -20,6 +20,7 @@ class DonationProvider extends ChangeNotifier {
   final List<Donation> _donations = [];
   final List<DistributionRecord> _distributionRecords = [];
   bool _isLoading = false;
+  bool _hasCompletedInitialFetch = false;
   String? _errorMessage;
   DonationType? _selectedTypeFilter;
   bool? _selectedVegFilter;
@@ -350,9 +351,11 @@ class DonationProvider extends ChangeNotifier {
 
       await _persistLocalDonations();
       _isLoading = false;
+      _hasCompletedInitialFetch = true;
       notifyListeners();
     } catch (e) {
       _isLoading = false;
+      _hasCompletedInitialFetch = true;
       AppLogger.error('Error loading donations from Supabase', e);
       notifyListeners();
     }
@@ -583,19 +586,33 @@ class DonationProvider extends ChangeNotifier {
             if (current != merged) {
               _donations[existingIdx] = merged;
               changed = true;
+              if (_hasCompletedInitialFetch &&
+                  (current.status != merged.status || (!current.isDelivered && merged.isDelivered))) {
+                _dispatchStatusChangeNotification(merged);
+              }
             }
           } else {
             _donations.insert(0, liveDonation);
             changed = true;
+            if (_hasCompletedInitialFetch &&
+                (liveDonation.isAvailable || liveDonation.status == DonationStatus.available)) {
+              NotificationService.instance.showNewDonationNotification(
+                title: 'नवीन दान उपलब्ध! (New Donation)',
+                body: '${liveDonation.donorName}: ${liveDonation.quantity} ${liveDonation.unit} ${liveDonation.title}',
+                payload: liveDonation.id,
+              );
+              onDonationReceived?.call(
+                'नवीन दान उपलब्ध! (New Donation)',
+                '${liveDonation.donorName}: ${liveDonation.quantity} ${liveDonation.unit} ${liveDonation.title}',
+                liveDonation.id,
+              );
+            }
           }
         } catch (_) {}
       }
 
       if (changed) {
         await _persistLocalDonations();
-        for (final d in _donations) {
-          _broadcastDonationEvent('update', d);
-        }
         notifyListeners();
       }
     } catch (_) {}
@@ -686,11 +703,23 @@ class DonationProvider extends ChangeNotifier {
           body: '${donation.assignedVolunteerName ?? "स्वयंसेवक"} ने "${donation.title}" चे वितरण स्वीकारले आहे.',
           payload: donation.id,
         );
+        onNotificationDispatch?.call(
+          'स्वयंसेवक नियुक्त (Volunteer Assigned)',
+          '${donation.assignedVolunteerName ?? "स्वयंसेवक"} ने "${donation.title}" चे वितरण स्वीकारले आहे.',
+          NotificationType.volunteerAssigned,
+          donation.id,
+        );
       } else if (donation.status == DonationStatus.pickedUp) {
         NotificationService.instance.showNewDonationNotification(
           title: 'दान वाहतुकीत आहे (Donation In Transit)',
           body: '"${donation.title}" पिकअप पूर्ण झाले असून आश्रमाकडे रवाना झाले आहे.',
           payload: donation.id,
+        );
+        onNotificationDispatch?.call(
+          'दान वाहतुकीत आहे (Donation In Transit)',
+          '"${donation.title}" पिकअप पूर्ण झाले असून आश्रमाकडे रवाना झाले आहे.',
+          NotificationType.pickupConfirmed,
+          donation.id,
         );
       } else if (donation.isDelivered ||
           donation.status == DonationStatus.deliveredToNgo ||

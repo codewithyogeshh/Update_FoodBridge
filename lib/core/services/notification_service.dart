@@ -89,7 +89,10 @@ class NotificationService {
         await initialize();
       }
 
-      final id = notificationId ?? (DateTime.now().millisecondsSinceEpoch ~/ 1000).remainder(100000);
+      final id = notificationId ??
+          (payload != null && payload.trim().isNotEmpty
+              ? (payload.trim().hashCode.abs() % 90000 + 1000)
+              : (DateTime.now().millisecondsSinceEpoch ~/ 1000).remainder(100000));
 
       const androidDetails = AndroidNotificationDetails(
         _kChannelId,

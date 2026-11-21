@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io' show Platform;
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/services/notification_service.dart';
 import '../domain/models/app_notification.dart';
 
 class NotificationProvider extends ChangeNotifier {
@@ -106,6 +107,11 @@ class NotificationProvider extends ChangeNotifier {
 
     _notifications.insert(0, notification);
     _persistNotifications();
+    NotificationService.instance.showSystemNotification(
+      title: title,
+      body: message,
+      payload: relatedDonationId ?? actionRoute,
+    );
     notifyListeners();
     return true;
   }
