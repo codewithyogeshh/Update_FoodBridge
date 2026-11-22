@@ -1,4 +1,5 @@
 import 'dart:io' show Platform;
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
@@ -34,11 +35,12 @@ class RouteMapView extends StatefulWidget {
   State<RouteMapView> createState() => _RouteMapViewState();
 }
 
-class _RouteMapViewState extends State<RouteMapView> {
+class _RouteMapViewState extends State<RouteMapView> with TickerProviderStateMixin {
   late final MapController _mapController;
+  late final AnimationController _pulseController;
+  late final AnimationController _simAnimController;
   List<LatLng> _liveRoutePoints = [];
 
-  // Default coordinate anchors (Satara Core Hub: Powai Naka -> Sadar Bazar -> MIDC)
   static const LatLng _defaultPickup = LatLng(17.6805, 73.9934);
   static const LatLng _defaultCourier = LatLng(17.6850, 73.9980);
   static const LatLng _defaultDestination = LatLng(17.6920, 74.0020);
@@ -50,9 +52,27 @@ class _RouteMapViewState extends State<RouteMapView> {
   @override
   void initState() {
     super.initState();
+    final bool isTestMode = !kIsWeb && Platform.environment.containsKey('FLUTTER_TEST');
     _mapController = MapController();
     _liveRoutePoints = _buildRealisticRoute();
     _loadLiveRoadRoute();
+
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1400),
+    );
+    _simAnimController = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 35),
+    );
+
+    if (!isTestMode) {
+      _pulseController.repeat();
+      _simAnimController.repeat();
+      _simAnimController.addListener(() {
+        if (mounted) setState(() {});
+      });
+    }
   }
 
   @override
@@ -68,6 +88,78 @@ class _RouteMapViewState extends State<RouteMapView> {
         } catch (_) {}
       }
     }
+  }
+
+  double _calculateDistance(LatLng a, LatLng b) {
+    const p = 0.017453292519943295;
+    final c = math.cos;
+    final aLat = a.latitude * p;
+    final bLat = b.latitude * p;
+    final dLat = (b.latitude - a.latitude) * p;
+    final dLon = (b.longitude - a.longitude) * p;
+    final val = 0.5 - c(dLat) / 2 + c(aLat) * c(bLat) * (1 - c(dLon)) / 2;
+    return 12742 * math.asin(math.sqrt(val));
+  }
+
+  double _calculateBearing(LatLng start, LatLng end) {
+    final lat1 = start.latitude * (math.pi / 180.0);
+    final lat2 = end.latitude * (math.pi / 180.0);
+    final dLon = (end.longitude - start.longitude) * (math.pi / 180.0);
+    final y = math.sin(dLon) * math.cos(lat2);
+    final x = math.cos(lat1) * math.sin(lat2) - math.sin(lat1) * math.cos(lat2) * math.cos(dLon);
+    final rad = math.atan2(y, x);
+    return (rad * 180.0 / math.pi + 360.0) % 360.0;
+  }
+
+  (LatLng, double, double, int, List<LatLng>, List<LatLng>) _computeLiveMotion() {
+    final pts = _liveRoutePoints.isNotEmpty ? _liveRoutePoints : _buildRealisticRoute();
+    if (pts.length < 2) {
+      return (_courier, 0.0, 2.5, 8, pts, <LatLng>[]);
+    }
+
+    final List<double> cumulative = [0.0];
+    for (int i = 0; i < pts.length - 1; i++) {
+      cumulative.add(cumulative.last + _calculateDistance(pts[i], pts[i + 1]));
+    }
+    final totalDist = cumulative.last;
+    if (totalDist <= 0.0001) {
+      return (_courier, 0.0, 2.5, 8, pts, <LatLng>[]);
+    }
+
+    final double animVal = _simAnimController.isAnimating ? _simAnimController.value : 0.45;
+    final double targetFraction = 0.12 + (animVal * 0.76);
+    final double targetDist = targetFraction * totalDist;
+
+    int segIndex = 0;
+    for (int i = 0; i < cumulative.length - 1; i++) {
+      if (targetDist >= cumulative[i] && targetDist <= cumulative[i + 1]) {
+        segIndex = i;
+        break;
+      }
+    }
+
+    final segStartDist = cumulative[segIndex];
+    final segEndDist = cumulative[segIndex + 1];
+    final segLen = segEndDist - segStartDist;
+    final segRatio = segLen > 0 ? (targetDist - segStartDist) / segLen : 0.0;
+
+    final p1 = pts[segIndex];
+    final p2 = pts[segIndex + 1];
+
+    final curLat = p1.latitude + (p2.latitude - p1.latitude) * segRatio;
+    final curLng = p1.longitude + (p2.longitude - p1.longitude) * segRatio;
+    final curPos = widget.courierLocation != null && !_simAnimController.isAnimating
+        ? widget.courierLocation!
+        : LatLng(curLat, curLng);
+
+    final bearing = _calculateBearing(p1, p2);
+    final remainingKm = (totalDist - targetDist).clamp(0.2, 50.0);
+    final etaMins = math.max(2, (remainingKm * 3.2).ceil());
+
+    final completed = <LatLng>[...pts.take(segIndex + 1), curPos];
+    final remaining = <LatLng>[curPos, ...pts.skip(segIndex + 1)];
+
+    return (curPos, bearing, remainingKm, etaMins, completed, remaining);
   }
 
   void _fitBounds() {
@@ -97,27 +189,31 @@ class _RouteMapViewState extends State<RouteMapView> {
 
   @override
   void dispose() {
+    _pulseController.dispose();
+    _simAnimController.dispose();
     _mapController.dispose();
     super.dispose();
   }
 
   Future<void> _recenter() async {
-    if (widget.courierLocation != null) {
-      _mapController.move(widget.courierLocation!, 14.5);
-    } else {
-      final currentPos = await LocationService.instance.getCurrentPosition();
-      _mapController.move(currentPos, 14.5);
-    }
+    try {
+      final (curPos, _, _, _, _, _) = _computeLiveMotion();
+      _mapController.move(curPos, 14.5);
+    } catch (_) {}
   }
 
   void _zoomIn() {
-    final currentZoom = _mapController.camera.zoom;
-    _mapController.move(_mapController.camera.center, (currentZoom + 1).clamp(5.0, 18.5));
+    try {
+      final currentZoom = _mapController.camera.zoom;
+      _mapController.move(_mapController.camera.center, (currentZoom + 1).clamp(5.0, 18.5));
+    } catch (_) {}
   }
 
   void _zoomOut() {
-    final currentZoom = _mapController.camera.zoom;
-    _mapController.move(_mapController.camera.center, (currentZoom - 1).clamp(5.0, 18.5));
+    try {
+      final currentZoom = _mapController.camera.zoom;
+      _mapController.move(_mapController.camera.center, (currentZoom - 1).clamp(5.0, 18.5));
+    } catch (_) {}
   }
 
   List<LatLng> _buildRealisticRoute() {
@@ -346,12 +442,12 @@ class _RouteMapViewState extends State<RouteMapView> {
   }
 
   Widget _buildRealMap(bool isDark) {
-    final routePoints = _liveRoutePoints.isNotEmpty ? _liveRoutePoints : _buildRealisticRoute();
+    final (curPos, bearing, remainingKm, etaMins, completed, remaining) = _computeLiveMotion();
 
     return FlutterMap(
       mapController: _mapController,
       options: MapOptions(
-        initialCenter: _courier,
+        initialCenter: curPos,
         initialZoom: 13.8,
         minZoom: 6.0,
         maxZoom: 18.5,
@@ -360,37 +456,41 @@ class _RouteMapViewState extends State<RouteMapView> {
         ),
       ),
       children: [
-        // OpenStreetMap raster tiles
         TileLayer(
           urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
           userAgentPackageName: 'org.foodbridge.app',
           maxZoom: 19,
         ),
-
-        // Route polyline (casing halo + core line)
         PolylineLayer(
           polylines: [
-            Polyline(
-              points: routePoints,
-              strokeWidth: 8.0,
-              color: const Color(0xFF1E88E5).withOpacity(0.3),
-              strokeCap: StrokeCap.round,
-              strokeJoin: StrokeJoin.round,
-            ),
-            Polyline(
-              points: routePoints,
-              strokeWidth: 4.5,
-              color: const Color(0xFF1E88E5),
-              strokeCap: StrokeCap.round,
-              strokeJoin: StrokeJoin.round,
-            ),
+            if (completed.length >= 2)
+              Polyline(
+                points: completed,
+                strokeWidth: 4.5,
+                color: AppColors.primaryGreen.withOpacity(0.6),
+                strokeCap: StrokeCap.round,
+                strokeJoin: StrokeJoin.round,
+              ),
+            if (remaining.length >= 2) ...[
+              Polyline(
+                points: remaining,
+                strokeWidth: 8.0,
+                color: const Color(0xFF1E88E5).withOpacity(0.25),
+                strokeCap: StrokeCap.round,
+                strokeJoin: StrokeJoin.round,
+              ),
+              Polyline(
+                points: remaining,
+                strokeWidth: 4.5,
+                color: const Color(0xFF1E88E5),
+                strokeCap: StrokeCap.round,
+                strokeJoin: StrokeJoin.round,
+              ),
+            ],
           ],
         ),
-
-        // Markers for Pickup, Destination, and Live Courier
         MarkerLayer(
           markers: [
-            // 1. Donor Pickup Marker
             Marker(
               point: _pickup,
               width: 120,
@@ -403,8 +503,6 @@ class _RouteMapViewState extends State<RouteMapView> {
                 label: 'Donor Pickup (पिकअप)',
               ),
             ),
-
-            // 2. NGO Shelter Destination Marker
             Marker(
               point: _destination,
               width: 120,
@@ -417,14 +515,12 @@ class _RouteMapViewState extends State<RouteMapView> {
                 label: 'NGO Shelter (डिलिव्हरी)',
               ),
             ),
-
-            // 3. Live Courier with floating ETA callout bubble
             Marker(
-              point: _courier,
-              width: 140,
-              height: 72,
+              point: curPos,
+              width: 160,
+              height: 84,
               alignment: Alignment.topCenter,
-              child: _buildCourierMarker(),
+              child: _buildMovingCourierMarker(curPos, bearing, remainingKm, etaMins),
             ),
           ],
         ),
@@ -492,13 +588,22 @@ class _RouteMapViewState extends State<RouteMapView> {
     );
   }
 
-  Widget _buildCourierMarker() {
+  Widget _buildMovingCourierMarker(
+    LatLng curPos,
+    double bearing,
+    double remainingKm,
+    int etaMins,
+  ) {
+    final pulseVal = _pulseController.value;
+    final String dynamicEta = widget.etaText.contains('min')
+        ? widget.etaText
+        : 'ETA: $etaMins min • ${remainingKm.toStringAsFixed(1)} km';
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        // Floating ETA callout badge
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
           decoration: BoxDecoration(
             color: AppColors.white,
             borderRadius: BorderRadius.circular(16),
@@ -517,7 +622,7 @@ class _RouteMapViewState extends State<RouteMapView> {
               const Icon(Icons.two_wheeler, size: 15, color: AppColors.primaryGreen),
               const SizedBox(width: 4),
               Text(
-                widget.etaText,
+                dynamicEta,
                 style: const TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.bold,
@@ -532,25 +637,47 @@ class _RouteMapViewState extends State<RouteMapView> {
           painter: _TrianglePainter(color: AppColors.white),
         ),
         const SizedBox(height: 2),
-
-        // Live Courier Scooter Pin
-        Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            color: const Color(0xFF1E88E5),
-            shape: BoxShape.circle,
-            border: Border.all(color: Colors.white, width: 2.5),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF1E88E5).withOpacity(0.5),
-                blurRadius: 10,
-                spreadRadius: 2,
+        SizedBox(
+          width: 50,
+          height: 50,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                width: 26 + (pulseVal * 22),
+                height: 26 + (pulseVal * 22),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.primaryGreen.withOpacity((1.0 - pulseVal) * 0.35),
+                  border: Border.all(
+                    color: AppColors.primaryGreen.withOpacity((1.0 - pulseVal) * 0.7),
+                    width: 1.5,
+                  ),
+                ),
+              ),
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1E88E5),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF1E88E5).withOpacity(0.5),
+                      blurRadius: 10,
+                      spreadRadius: 2,
+                    ),
+                  ],
+                ),
+                child: Center(
+                  child: Transform.rotate(
+                    angle: bearing * (math.pi / 180.0),
+                    child: const Icon(Icons.two_wheeler, size: 19, color: Colors.white),
+                  ),
+                ),
               ),
             ],
-          ),
-          child: const Center(
-            child: Icon(Icons.delivery_dining, size: 18, color: Colors.white),
           ),
         ),
       ],
