@@ -5,11 +5,18 @@ on:
     paths:
       - '.github/workflows/build-apk.yml'
       - 'pubspec.yaml'
+      - 'pubspec.lock'
+      - 'lib/**'
+      - 'assets/**'
       - 'android/**'
   workflow_dispatch:
 
 permissions:
   contents: write
+
+concurrency:
+  group: android-apk
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -59,8 +66,13 @@ jobs:
             Installable Android build of FoodBridge (Flutter + Supabase).
 
             Download `app-release.apk` and open it on your phone. Android will ask you to allow installing from this source once.
+
+            This APK is rebuilt and replaced automatically whenever the app code changes (`lib/`, `assets/`, `pubspec.yaml` or `android/`) are pushed to `main`.
+
+            Latest build: commit `${{ github.sha }}`.
           files: build/app/outputs/flutter-apk/app-release.apk
           fail_on_unmatched_files: true
+          overwrite_files: true
 
       - name: Save failure log
         if: failure()
