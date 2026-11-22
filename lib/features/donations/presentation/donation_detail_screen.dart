@@ -11,6 +11,7 @@ import '../../authentication/presentation/auth_provider.dart';
 import '../domain/models/donation.dart';
 import '../presentation/donation_provider.dart';
 import 'widgets/donation_status_timeline.dart';
+import 'widgets/food_hero_certificate_modal.dart';
 
 class DonationDetailScreen extends StatelessWidget {
   final String donationId;
@@ -704,6 +705,20 @@ class DonationDetailScreen extends StatelessWidget {
                 }
               }
             },
+          ),
+        ],
+      );
+    }
+
+    if (donation.isDelivered || donation.deliveredAt != null) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          FBButton(
+            label: 'View Food Hero Certificate (प्रमाणपत्र पहा)',
+            variant: FBButtonVariant.primary,
+            icon: Icons.workspace_premium_outlined,
+            onPressed: () => FoodHeroCertificateModal.show(context, donation),
           ),
         ],
       );

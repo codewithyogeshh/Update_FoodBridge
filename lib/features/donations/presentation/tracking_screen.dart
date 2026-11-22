@@ -7,6 +7,7 @@ import '../../authentication/domain/models/app_user.dart';
 import '../../authentication/presentation/auth_provider.dart';
 import '../domain/models/donation.dart';
 import 'donation_provider.dart';
+import 'widgets/food_hero_certificate_modal.dart';
 
 /// The official FoodBridge Real-Time Tracking Screen (Matching Blinkit & Rapido standard).
 /// Features:
@@ -505,7 +506,91 @@ class _TrackingScreenState extends State<TrackingScreen> {
                 ],
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
+            if (donation.isDelivered ||
+                donation.deliveredAt != null ||
+                donation.status == DonationStatus.delivered ||
+                donation.status == DonationStatus.deliveredToNgo ||
+                donation.status == DonationStatus.completed) ...[
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFFFFBEB), Color(0xFFFEF3C7)],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: const Color(0xFFF59E0B), width: 1.5),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFF59E0B).withOpacity(0.15),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: const BoxDecoration(
+                            color: Color(0xFFD97706),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.workspace_premium, color: Colors.white, size: 24),
+                        ),
+                        const SizedBox(width: 14),
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Food Hero Certificate Ready! 🏆',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFF92400E),
+                                ),
+                              ),
+                              SizedBox(height: 2),
+                              Text(
+                                'पर्यावरण व सामाजिक प्रभाव प्रमाणपत्र डाऊनलोड करा',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                  color: Color(0xFFB45309),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        icon: const Icon(Icons.verified_outlined, size: 18),
+                        label: const Text('View & Download Certificate (प्रमाणपत्र पहा)'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFD97706),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        onPressed: () => FoodHeroCertificateModal.show(context, donation),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+            ],
 
             // 5. Emergency Task Release & Support
             OutlinedButton.icon(

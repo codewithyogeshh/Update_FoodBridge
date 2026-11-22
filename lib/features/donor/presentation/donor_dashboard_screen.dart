@@ -16,6 +16,7 @@ import '../../authentication/presentation/auth_provider.dart';
 import '../../authentication/presentation/widgets/terms_and_conditions_modal.dart';
 import '../../donations/domain/models/donation.dart';
 import '../../donations/presentation/donation_provider.dart';
+import '../../donations/presentation/widgets/food_hero_certificate_modal.dart';
 
 class DonorDashboardScreen extends StatefulWidget {
   const DonorDashboardScreen({super.key});
@@ -558,6 +559,25 @@ class _DonorDashboardScreenState extends State<DonorDashboardScreen> {
             showLine: false,
             lineColor: Colors.transparent,
           ),
+          if (isDelivered) ...[
+            const SizedBox(height: 12),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                icon: const Icon(Icons.workspace_premium, size: 18),
+                label: const Text('Food Hero Certificate 🏆'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFD97706),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                onPressed: () => FoodHeroCertificateModal.show(context, donation),
+              ),
+            ),
+          ],
         ],
       ),
     );
