@@ -21,7 +21,7 @@ class NotificationService {
   /// Initialize local notifications plugin and create notification channels
   Future<void> initialize() async {
     if (_isInitialized) return;
-    if (Platform.environment.containsKey('FLUTTER_TEST')) {
+    if (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')) {
       _isInitialized = true;
       return;
     }
@@ -83,7 +83,7 @@ class NotificationService {
     String? payload,
     int? notificationId,
   }) async {
-    if (Platform.environment.containsKey('FLUTTER_TEST')) return;
+    if (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')) return;
     try {
       if (!_isInitialized) {
         await initialize();

@@ -15,6 +15,9 @@ import '../../notifications/domain/models/app_notification.dart';
 import '../domain/models/donation.dart';
 import '../domain/models/distribution_record.dart';
 
+/// Who should receive a notification for a given lifecycle event.
+enum _NotificationAudience { donorOnly, ngoOnly, donorAndNgo, everyone }
+
 class DonationProvider extends ChangeNotifier {
   static const String _kLocalDonationsKey = 'foodbridge_saved_donations';
   final List<Donation> _donations = [];
@@ -31,6 +34,32 @@ class DonationProvider extends ChangeNotifier {
   /// Global hook for in-app notification dispatch across multi-device sync
   static void Function(String title, String body, String? donationId)? onDonationReceived;
   static void Function(String title, String body, NotificationType type, String? donationId)? onNotificationDispatch;
+
+  /// Resolve the currently signed-in user for this device/session.
+  AppUser? get _sessionUser {
+    try {
+      return AuthService().currentUser;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Whether THIS device should alert for [donation] given the sign-in state.
+  /// When no user is resolved we fall back to alerting (preserves prior behavior).
+  bool _shouldAlertFor(Donation donation, _NotificationAudience audience) {
+    final user = _sessionUser;
+    if (user == null) return true;
+    switch (audience) {
+      case _NotificationAudience.donorOnly:
+        return user.id == donation.donorId;
+      case _NotificationAudience.ngoOnly:
+        return user.role == UserRole.ngo;
+      case _NotificationAudience.donorAndNgo:
+        return user.id == donation.donorId || user.role == UserRole.ngo;
+      case _NotificationAudience.everyone:
+        return true;
+    }
+  }
 
   String resolveVolunteerName(String? volId, String? currentName) {
     try {
@@ -660,7 +689,8 @@ class DonationProvider extends ChangeNotifier {
         } else {
           _donations.insert(0, donation);
           // Trigger high-priority push/system notification across devices
-          if (action == 'create' || donation.status == DonationStatus.available) {
+          if ((action == 'create' || donation.status == DonationStatus.available) &&
+              _shouldAlertFor(donation, _NotificationAudience.donorAndNgo)) {
             NotificationService.instance.showNewDonationNotification(
               title: 'नवीन दान उपलब्ध! (New Donation)',
               body: '${donation.donorName}: ${donation.quantity} ${donation.unit} ${donation.title}',
@@ -727,6 +757,7 @@ class DonationProvider extends ChangeNotifier {
           donation.status == DonationStatus.distributed ||
           donation.status == DonationStatus.completed ||
           donation.deliveredAt != null) {
+        if (!_shouldAlertFor(donation, _NotificationAudience.donorAndNgo)) return;
         final deliveryMsg = 'प्रिय ${donation.donorName}, तुमची "${donation.title}" ही donation आश्रमात (${donation.claimedByNgoName ?? "Shelter"}) यशस्वीरित्या सुरक्षितपणे पोहोचली आहे. मनापासून धन्यवाद!';
         NotificationService.instance.showSystemNotification(
           title: 'दान यशस्वीरित्या पोहोचले! (Donation Delivered)',
@@ -804,7 +835,8 @@ class DonationProvider extends ChangeNotifier {
           _donations.insert(0, donation);
           changed = true;
           // Notify newly arrived available donation
-          if (donation.status == DonationStatus.available) {
+          if (donation.status == DonationStatus.available &&
+              _shouldAlertFor(donation, _NotificationAudience.donorAndNgo)) {
             NotificationService.instance.showNewDonationNotification(
               title: 'नवीन दान उपलब्ध! (New Donation)',
               body: '${donation.donorName}: ${donation.quantity} ${donation.unit} ${donation.title}',
@@ -855,7 +887,8 @@ class DonationProvider extends ChangeNotifier {
       } else {
         _donations.insert(0, donation);
         // Trigger high-priority push/system notification on phone screen
-        if (payload.eventType == PostgresChangeEvent.insert || donation.status == DonationStatus.available) {
+        if ((payload.eventType == PostgresChangeEvent.insert || donation.status == DonationStatus.available) &&
+            _shouldAlertFor(donation, _NotificationAudience.donorAndNgo)) {
           NotificationService.instance.showNewDonationNotification(
             title: 'नवीन दान उपलब्ध! (New Donation)',
             body: '${donation.donorName}: ${donation.quantity} ${donation.unit} ${donation.title}',
