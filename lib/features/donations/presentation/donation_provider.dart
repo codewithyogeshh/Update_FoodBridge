@@ -758,20 +758,27 @@ class DonationProvider extends ChangeNotifier {
           donation.status == DonationStatus.completed ||
           donation.deliveredAt != null) {
         if (!_shouldAlertFor(donation, _NotificationAudience.donorAndNgo)) return;
-        final deliveryMsg = 'प्रिय ${donation.donorName}, तुमची "${donation.title}" ही donation आश्रमात (${donation.claimedByNgoName ?? "Shelter"}) यशस्वीरित्या सुरक्षितपणे पोहोचली आहे. मनापासून धन्यवाद!';
+        final user = _sessionUser;
+        final isNgo = user?.role == UserRole.ngo || (user != null && donation.claimedByNgoId == user.id);
+        final deliveryTitle = isNgo
+            ? 'दान आश्रमात पोहोचले! (Donation Received)'
+            : 'दान यशस्वीरित्या पोहोचले! (Donation Delivered)';
+        final deliveryMsg = isNgo
+            ? 'स्वयंसेवक ${donation.assignedVolunteerName ?? "स्वयंसेवक"} ने "${donation.title}" (${donation.quantity} ${donation.unit}) तुमच्या आश्रमात सुरक्षित सुपूर्द केले आहे.'
+            : 'प्रिय ${donation.donorName}, तुमची "${donation.title}" ही donation आश्रमात (${donation.claimedByNgoName ?? "Shelter"}) यशस्वीरित्या सुरक्षितपणे पोहोचली आहे. मनापासून धन्यवाद!';
         NotificationService.instance.showSystemNotification(
-          title: 'दान यशस्वीरित्या पोहोचले! (Donation Delivered)',
+          title: deliveryTitle,
           body: deliveryMsg,
           payload: donation.id,
         );
         onNotificationDispatch?.call(
-          'दान यशस्वीरित्या पोहोचले! (Donation Delivered)',
+          deliveryTitle,
           deliveryMsg,
           NotificationType.deliveryConfirmed,
           donation.id,
         );
         onDonationReceived?.call(
-          'दान यशस्वीरित्या पोहोचले! (Donation Delivered)',
+          deliveryTitle,
           deliveryMsg,
           donation.id,
         );
@@ -1648,6 +1655,18 @@ class DonationProvider extends ChangeNotifier {
             'recipient_user_id': donorUuid,
             'title': 'दान यशस्वीरित्या पोहोचले! (Donation Delivered)',
             'message': deliveryMsg,
+          });
+        } catch (_) {}
+      }
+
+      if (current.claimedByNgoId != null && current.claimedByNgoId!.isNotEmpty) {
+        try {
+          final ngoUuid = AuthService.resolveUuid(current.claimedByNgoId!);
+          final ngoMsg = 'स्वयंसेवक ${current.assignedVolunteerName ?? "स्वयंसेवक"} ने "${current.title}" (${current.quantity} ${current.unit}) तुमच्या आश्रमात सुरक्षित सुपूर्द केले आहे.';
+          await Supabase.instance.client.from('notifications').insert({
+            'recipient_user_id': ngoUuid,
+            'title': 'दान आश्रमात पोहोचले! (Donation Received)',
+            'message': ngoMsg,
           });
         } catch (_) {}
       }
