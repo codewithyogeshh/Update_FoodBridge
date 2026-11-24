@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart' hide Path;
 import 'package:provider/provider.dart';
 import '../../../core/services/location_service.dart';
 import '../../../core/services/media_service.dart';
+import '../../../core/services/voice_alert_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/route_map_view.dart';
 import '../../authentication/presentation/auth_provider.dart';
@@ -29,6 +30,7 @@ class _VolunteerTaskTrackingScreenState extends State<VolunteerTaskTrackingScree
   LatLng? _liveCourierPos;
   Timer? _gpsTimer;
   bool _isGpsRefreshing = false;
+  String? _announcedTaskId;
 
   @override
   void initState() {
@@ -262,6 +264,8 @@ class _VolunteerTaskTrackingScreenState extends State<VolunteerTaskTrackingScree
 
                   if (bCtx.mounted) Navigator.pop(bCtx);
                   if (mounted) {
+                    // Voice alert: pickup verified, heading to the NGO.
+                    VoiceAlertService.instance.speakPickupConfirmed();
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
                         content: Text('Cargo Picked Up! Now heading to NGO Shelter 🛵'),
@@ -477,6 +481,10 @@ class _VolunteerTaskTrackingScreenState extends State<VolunteerTaskTrackingScree
                         Navigator.pop(bCtx);
                       }
                       if (mounted) {
+                        // Voice alert: delivery OTP matched, mission complete.
+                        VoiceAlertService.instance.speakDeliveryComplete(
+                          ngoName: task?.claimedByNgoName ?? '',
+                        );
                         _showCelebrationDialog(task);
                       }
                     },
@@ -530,6 +538,10 @@ class _VolunteerTaskTrackingScreenState extends State<VolunteerTaskTrackingScree
                   Navigator.pop(parentCtx);
                 }
                 if (mounted) {
+                  // Voice alert: QR-scanned OTP matched, mission complete.
+                  VoiceAlertService.instance.speakDeliveryComplete(
+                    ngoName: task?.claimedByNgoName ?? '',
+                  );
                   _showCelebrationDialog(task);
                 }
               } else {
@@ -589,6 +601,19 @@ class _VolunteerTaskTrackingScreenState extends State<VolunteerTaskTrackingScree
     final Donation? currentTask = activeTasks.isNotEmpty
         ? activeTasks.first
         : sampleFallback;
+
+    // Voice alert: announce a newly assigned pickup once (per task) so the
+    // volunteer hears the location/distance without looking at the screen.
+    if (currentTask != null && _announcedTaskId != currentTask.id) {
+      _announcedTaskId = currentTask.id;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          VoiceAlertService.instance.speakPickupAlert(
+            distanceKm: currentTask.estimatedDistanceKm.toStringAsFixed(1),
+          );
+        }
+      });
+    }
 
     final title = currentTask?.title ?? 'Surplus Meal Pickup';
     final String location;

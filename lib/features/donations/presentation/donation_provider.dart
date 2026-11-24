@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../core/config/env_config.dart';
 import '../../../core/services/location_service.dart';
 import '../../../core/services/notification_service.dart';
+import '../../../core/services/receipt_service.dart';
 import '../../../core/utils/app_logger.dart';
 import '../../authentication/data/auth_service.dart';
 import '../../authentication/domain/models/app_user.dart';
@@ -1636,6 +1637,11 @@ class DonationProvider extends ChangeNotifier {
       deliveryMsg,
       current.id,
     );
+
+    // Fire-and-forget WhatsApp/SMS instant receipt to the donor once delivery
+    // is confirmed. Failures are non-fatal to the delivery flow.
+    final receiptDonation = _donations[index];
+    unawaited(ReceiptService.instance.sendInstantReceipt(receiptDonation));
 
     if (_isSupabaseLive) {
       try {

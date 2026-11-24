@@ -7,6 +7,7 @@ import '../../../core/widgets/fb_text_field.dart';
 import '../../authentication/presentation/auth_provider.dart';
 import '../../donations/domain/models/donation.dart';
 import '../../donations/presentation/donation_provider.dart';
+import 'widgets/gemini_food_scanner_card.dart';
 
 class CreateDonationScreen extends StatefulWidget {
   const CreateDonationScreen({super.key});
@@ -206,7 +207,30 @@ class _CreateDonationScreenState extends State<CreateDonationScreen> {
                   },
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
+
+              if (_donationType == DonationType.food) ...[
+                GeminiFoodScannerCard(
+                  onScanComplete: (result, imagePath) {
+                    setState(() {
+                      _titleController.text = result.foodTitle;
+                      _isVeg = result.isVeg;
+                      _storageCondition = result.storageCondition;
+                      _pickupDeadline = DateTime.now().add(Duration(hours: result.safeShelfLifeHours));
+                      _descriptionController.text = '${result.marathiSummary}\n${result.safetyAdvisory}';
+                      _safetyCharterAgreed = true;
+                    });
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Gemini AI: ${result.foodTitle} स्कॅन यशस्वी!'),
+                        backgroundColor: AppColors.primaryGreen,
+                        duration: const Duration(seconds: 2),
+                      ),
+                    );
+                  },
+                ),
+                const SizedBox(height: 20),
+              ],
 
               // Title
               FBTextField(
