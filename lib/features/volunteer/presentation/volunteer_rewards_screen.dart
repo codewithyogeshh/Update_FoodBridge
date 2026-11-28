@@ -36,7 +36,7 @@ class _VolunteerRewardsScreenState extends State<VolunteerRewardsScreen> {
     // Build a volunteer-name lookup from the live delivery ledger so the
     // leaderboard shows real names instead of generic placeholders.
     final volunteerNames = <String, String>{};
-    final selfName = auth.user?.fullName?.trim();
+    final selfName = auth.user?.fullName.trim();
     if (selfName != null && selfName.isNotEmpty) {
       volunteerNames[volunteerId] = selfName;
     }

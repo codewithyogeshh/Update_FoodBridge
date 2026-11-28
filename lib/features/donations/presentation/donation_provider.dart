@@ -442,8 +442,8 @@ class DonationProvider extends ChangeNotifier {
     _heartbeatTimer?.cancel();
     if (!kIsWeb && Platform.environment.containsKey('FLUTTER_TEST')) return;
     int cycleCount = 0;
-    // 3-second rapid background reconciliation ensures sync even if cellular network is unstable
-    _heartbeatTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+    // 15-second background reconciliation ensures passive sync without congesting cellular radio
+    _heartbeatTimer = Timer.periodic(const Duration(seconds: 15), (_) {
       cycleCount++;
       _syncLatestChanges();
       // Periodically request peer sync (or immediately if local list is empty)
@@ -564,6 +564,11 @@ class DonationProvider extends ChangeNotifier {
           : ((current.deliveryOtp.isNotEmpty && current.deliveryOtp != '9152')
               ? current.deliveryOtp
               : Donation.generateDeterministicOtp(current.id, isDelivery: true)),
+      courierLatitude: incoming.courierLatitude ?? current.courierLatitude,
+      courierLongitude: incoming.courierLongitude ?? current.courierLongitude,
+      courierHeading: incoming.courierHeading ?? current.courierHeading,
+      estimatedDistanceKm: incoming.estimatedDistanceKm,
+      estimatedMinutes: incoming.estimatedMinutes,
     );
   }
 
@@ -1539,7 +1544,35 @@ class DonationProvider extends ChangeNotifier {
       notifyListeners();
       _persistLocalDonations();
       _broadcastDonationEvent('update', updated);
+      if (_isSupabaseLive) {
+        _throttleDbCourierUpdate(donationId, latitude, longitude, heading);
+      }
     }
+  }
+
+  DateTime? _lastDbCourierUpdate;
+  void _throttleDbCourierUpdate(
+    String donationId,
+    double latitude,
+    double longitude,
+    double? heading,
+  ) {
+    final now = DateTime.now();
+    if (_lastDbCourierUpdate != null &&
+        now.difference(_lastDbCourierUpdate!).inSeconds < 5) {
+      return;
+    }
+    _lastDbCourierUpdate = now;
+    Future.microtask(() async {
+      try {
+        final client = Supabase.instance.client;
+        await client.from('donations').update({
+          'courier_latitude': latitude,
+          'courier_longitude': longitude,
+          'courier_heading': heading,
+        }).eq('id', donationId);
+      } catch (_) {}
+    });
   }
 
   /// Volunteer verifies and marks task as picked up using 4-digit donor OTP

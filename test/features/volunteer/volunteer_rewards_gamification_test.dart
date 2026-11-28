@@ -10,7 +10,6 @@ import 'package:foodbridge/features/donations/domain/models/donation.dart';
 import 'package:foodbridge/features/donations/presentation/donation_provider.dart';
 import 'package:foodbridge/features/notifications/presentation/notification_provider.dart';
 import 'package:foodbridge/features/volunteer/presentation/volunteer_rewards_screen.dart';
-import 'package:foodbridge/features/volunteer/presentation/widgets/nss_certificate_modal.dart';
 
 Donation _completed({
   required String id,

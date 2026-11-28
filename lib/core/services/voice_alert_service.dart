@@ -88,7 +88,14 @@ class VoiceAlertService {
     if (_isTestMode) return;
     final tts = _tts ??= FlutterTts();
     try {
-      await tts.setLanguage('mr-IN');
+      final languages = await tts.getLanguages;
+      if (languages is List && languages.contains('mr-IN')) {
+        await tts.setLanguage('mr-IN');
+      } else if (languages is List && languages.contains('hi-IN')) {
+        await tts.setLanguage('hi-IN');
+      } else {
+        await tts.setLanguage('en-IN');
+      }
       await tts.setSpeechRate(0.5);
       await tts.setPitch(1.0);
       await tts.setVolume(1.0);
@@ -106,10 +113,20 @@ class VoiceAlertService {
       if (!_initialized) {
         await initialize();
       }
+      // Stop prior speech to prevent audio buffer congestion or overlapping sound
+      await _tts?.stop();
       await _tts?.speak(text);
     } catch (e) {
       debugPrint('[VoiceAlertService] speak error: $e');
     }
+  }
+
+  /// Stops current speech output immediately.
+  Future<void> stop() async {
+    if (_isTestMode) return;
+    try {
+      await _tts?.stop();
+    } catch (_) {}
   }
 
   /// Announces that a new pickup is available at [distanceKm] km away.

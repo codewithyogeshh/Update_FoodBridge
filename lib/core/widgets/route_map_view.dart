@@ -39,6 +39,9 @@ class _RouteMapViewState extends State<RouteMapView> with TickerProviderStateMix
   late final MapController _mapController;
   late final AnimationController _pulseController;
   late final AnimationController _simAnimController;
+  late final AnimationController _courierInterpolationController;
+  LatLng? _prevCourierPos;
+  LatLng? _targetCourierPos;
   List<LatLng> _liveRoutePoints = [];
 
   static const LatLng _defaultPickup = LatLng(17.6805, 73.9934);
@@ -65,11 +68,18 @@ class _RouteMapViewState extends State<RouteMapView> with TickerProviderStateMix
       vsync: this,
       duration: const Duration(seconds: 35),
     );
+    _courierInterpolationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
 
     if (!isTestMode) {
       _pulseController.repeat();
       _simAnimController.repeat();
       _simAnimController.addListener(() {
+        if (mounted) setState(() {});
+      });
+      _courierInterpolationController.addListener(() {
         if (mounted) setState(() {});
       });
     }
@@ -78,6 +88,12 @@ class _RouteMapViewState extends State<RouteMapView> with TickerProviderStateMix
   @override
   void didUpdateWidget(RouteMapView oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (widget.courierLocation != null &&
+        oldWidget.courierLocation != widget.courierLocation) {
+      _prevCourierPos = _targetCourierPos ?? oldWidget.courierLocation ?? widget.courierLocation;
+      _targetCourierPos = widget.courierLocation;
+      _courierInterpolationController.forward(from: 0.0);
+    }
     if (oldWidget.courierLocation != widget.courierLocation ||
         oldWidget.pickupLocation != widget.pickupLocation ||
         oldWidget.destinationLocation != widget.destinationLocation) {
@@ -117,6 +133,45 @@ class _RouteMapViewState extends State<RouteMapView> with TickerProviderStateMix
       return (_courier, 0.0, 2.5, 8, pts, <LatLng>[]);
     }
 
+    // When real courier location is supplied by active GPS/network stream
+    if (widget.courierLocation != null) {
+      LatLng curPos = widget.courierLocation!;
+      if (_prevCourierPos != null &&
+          _targetCourierPos != null &&
+          _courierInterpolationController.isAnimating) {
+        final t = Curves.easeInOutCubic.transform(_courierInterpolationController.value);
+        curPos = LatLng(
+          _prevCourierPos!.latitude + (_targetCourierPos!.latitude - _prevCourierPos!.latitude) * t,
+          _prevCourierPos!.longitude + (_targetCourierPos!.longitude - _prevCourierPos!.longitude) * t,
+        );
+      }
+
+      double bearing = 0.0;
+      if (_prevCourierPos != null && _calculateDistance(_prevCourierPos!, curPos) > 0.0001) {
+        bearing = _calculateBearing(_prevCourierPos!, curPos);
+      } else {
+        bearing = _calculateBearing(curPos, _destination);
+      }
+
+      final remainingKm = _calculateDistance(curPos, _destination).clamp(0.1, 50.0);
+      final etaMins = math.max(1, (remainingKm * 3.0).ceil());
+
+      int closestIndex = 0;
+      double minDistance = double.infinity;
+      for (int i = 0; i < pts.length; i++) {
+        final d = _calculateDistance(pts[i], curPos);
+        if (d < minDistance) {
+          minDistance = d;
+          closestIndex = i;
+        }
+      }
+
+      final completed = <LatLng>[...pts.take(closestIndex + 1), curPos];
+      final remaining = <LatLng>[curPos, ...pts.skip(closestIndex + 1)];
+
+      return (curPos, bearing, remainingKm, etaMins, completed, remaining);
+    }
+
     final List<double> cumulative = [0.0];
     for (int i = 0; i < pts.length - 1; i++) {
       cumulative.add(cumulative.last + _calculateDistance(pts[i], pts[i + 1]));
@@ -148,9 +203,7 @@ class _RouteMapViewState extends State<RouteMapView> with TickerProviderStateMix
 
     final curLat = p1.latitude + (p2.latitude - p1.latitude) * segRatio;
     final curLng = p1.longitude + (p2.longitude - p1.longitude) * segRatio;
-    final curPos = widget.courierLocation != null && !_simAnimController.isAnimating
-        ? widget.courierLocation!
-        : LatLng(curLat, curLng);
+    final curPos = LatLng(curLat, curLng);
 
     final bearing = _calculateBearing(p1, p2);
     final remainingKm = (totalDist - targetDist).clamp(0.2, 50.0);
@@ -191,6 +244,7 @@ class _RouteMapViewState extends State<RouteMapView> with TickerProviderStateMix
   void dispose() {
     _pulseController.dispose();
     _simAnimController.dispose();
+    _courierInterpolationController.dispose();
     _mapController.dispose();
     super.dispose();
   }

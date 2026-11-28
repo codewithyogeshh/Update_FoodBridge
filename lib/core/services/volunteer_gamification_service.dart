@@ -55,11 +55,14 @@ class VolunteerGamificationService {
   static const double hoursPerDelivery = 2.2;
 
   /// Collects the completed deliveries performed by [volunteerId] from
-  /// [allDonations].
+  /// [allDonations], deduplicating by donation ID to prevent double-counting
+  /// during concurrent multi-device sync.
   static List<Donation> completedFor(List<Donation> allDonations, String volunteerId) {
+    final seenIds = <String>{};
     return allDonations
         .where((d) =>
             d.assignedVolunteerId == volunteerId &&
+            seenIds.add(d.id) &&
             (d.isDelivered ||
                 d.deliveredAt != null ||
                 d.status == DonationStatus.delivered ||

@@ -224,7 +224,7 @@ class NssCertificateModal extends StatelessWidget {
                 elevation: 2,
               ),
               onPressed: () async {
-                final bytes = await VolunteerGamificationService.generateNssCertificatePdf(
+                await VolunteerGamificationService.generateNssCertificatePdf(
                   summary: summary,
                   collegeName: collegeName,
                 );

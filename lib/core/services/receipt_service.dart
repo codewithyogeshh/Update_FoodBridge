@@ -107,9 +107,17 @@ class ReceiptService {
   /// Opens WhatsApp with the pre-filled message for [phone].
   Future<bool> _sendWhatsApp(String phone, String message) async {
     try {
-      final uri = Uri.parse('https://wa.me/$phone')
+      // Primary: Universal wa.me link
+      final webUri = Uri.parse('https://wa.me/$phone')
           .replace(queryParameters: {'text': message});
-      return await _launch(uri);
+      final launchedWeb = await _launch(webUri);
+      if (launchedWeb) return true;
+
+      // Secondary: Direct app deep link intent for devices with strict browser sandboxes
+      final appUri = Uri.parse(
+        'whatsapp://send?phone=$phone&text=${Uri.encodeComponent(message)}',
+      );
+      return await _launch(appUri);
     } catch (e) {
       AppLogger.warning('[ReceiptService] WhatsApp send failed: $e');
       return false;
@@ -128,10 +136,15 @@ class ReceiptService {
   }
 
   Future<bool> _launch(Uri uri) async {
-    if (await canLaunchUrl(uri)) {
-      return launchUrl(uri, mode: LaunchMode.externalApplication);
+    try {
+      if (await canLaunchUrl(uri)) {
+        return await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
+      // Attempt direct external launch in case package visibility check was delayed
+      return await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (_) {
+      return false;
     }
-    return false;
   }
 
   /// Normalizes a phone number into E.164-ish format (strips spaces, dashes,

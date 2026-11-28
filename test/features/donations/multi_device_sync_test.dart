@@ -125,5 +125,41 @@ void main() {
       expect(provider.getDonationById('food-cycle-101')!.status, DonationStatus.assignedForPickup);
       expect(provider.getDonationById('food-cycle-101')!.assignedVolunteerName, 'Rohit Kulkarni');
     });
+
+    test('Live courier GPS coordinates and heading propagate correctly across devices', () async {
+      final donation = Donation(
+        id: 'food-gps-101',
+        donorId: 'usr-donor-101',
+        donorName: 'Green Leaf Bistro',
+        title: 'Hot Meals',
+        description: 'Packaged lunch',
+        quantity: 25,
+        unit: 'meals',
+        type: DonationType.food,
+        status: DonationStatus.assignedForPickup,
+        pickupAddress: 'Powai Naka, Satara',
+        city: 'Satara',
+        createdAt: DateTime.now(),
+        pickupDeadline: DateTime.now().add(const Duration(hours: 3)),
+      );
+
+      await provider.createDonation(donation);
+
+      // Volunteer updates live courier location
+      await provider.updateCourierLocation(
+        donationId: 'food-gps-101',
+        latitude: 17.6855,
+        longitude: 73.9982,
+        heading: 45.0,
+      );
+
+      final updated = provider.getDonationById('food-gps-101');
+      expect(updated, isNotNull);
+      expect(updated!.courierLatitude, equals(17.6855));
+      expect(updated.courierLongitude, equals(73.9982));
+      expect(updated.courierHeading, equals(45.0));
+      expect(updated.liveCourierLatLng, isNotNull);
+      expect(updated.estimatedMinutes, greaterThan(0));
+    });
   });
 }

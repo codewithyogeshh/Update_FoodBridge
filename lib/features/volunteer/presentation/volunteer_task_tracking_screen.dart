@@ -96,24 +96,31 @@ class _VolunteerTaskTrackingScreenState extends State<VolunteerTaskTrackingScree
           );
         }
       }
-      // Periodically sync real GPS coordinates from device
-      _gpsTimer = Timer.periodic(const Duration(seconds: 6), (_) async {
+      // Periodically sync real GPS coordinates from device with movement filtering
+      _gpsTimer = Timer.periodic(const Duration(seconds: 4), (_) async {
         if (!mounted) return;
-        final current = await LocationService.instance.getCurrentPosition();
-        if (mounted) {
-          setState(() => _liveCourierPos = current);
-          final donationProvider = context.read<DonationProvider>();
-          final auth = context.read<AuthProvider>();
-          final volunteerId = auth.user?.id ?? 'usr-vol-301';
-          final activeTasks = donationProvider.getVolunteerActiveTasks(volunteerId);
-          if (activeTasks.isNotEmpty) {
-            donationProvider.updateCourierLocation(
-              donationId: activeTasks.first.id,
-              latitude: current.latitude,
-              longitude: current.longitude,
-            );
+        try {
+          final current = await LocationService.instance.getCurrentPosition();
+          if (!mounted) return;
+          final double distanceMovedKm = _liveCourierPos != null
+              ? LocationService.instance.calculateDistanceKm(_liveCourierPos!, current)
+              : 1.0;
+          // Only broadcast location if moved by >= 4 meters or if initial position
+          if (distanceMovedKm >= 0.004) {
+            setState(() => _liveCourierPos = current);
+            final donationProvider = context.read<DonationProvider>();
+            final auth = context.read<AuthProvider>();
+            final volunteerId = auth.user?.id ?? 'usr-vol-301';
+            final activeTasks = donationProvider.getVolunteerActiveTasks(volunteerId);
+            if (activeTasks.isNotEmpty) {
+              donationProvider.updateCourierLocation(
+                donationId: activeTasks.first.id,
+                latitude: current.latitude,
+                longitude: current.longitude,
+              );
+            }
           }
-        }
+        } catch (_) {}
       });
     } catch (_) {}
   }

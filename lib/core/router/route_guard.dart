@@ -6,6 +6,7 @@ class RouteGuard {
   static const List<String> publicRoutes = [
     '/',
     '/onboarding',
+    '/permissions',
     '/login',
     '/admin-login',
     '/register',

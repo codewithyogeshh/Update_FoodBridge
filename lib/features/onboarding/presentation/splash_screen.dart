@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import '../../../core/router/initial_route.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/widgets/foodbridge_logo.dart';
-import '../../authentication/domain/models/app_user.dart';
 import '../../authentication/presentation/auth_provider.dart';
+import 'permission_request_screen.dart';
 
 /// The official FoodBridge Splash Screen (Matching Image 1 Screen 1).
 /// Features a deep emerald gradient, the glowing FoodBridge white heart emblem,
@@ -46,29 +48,22 @@ class _SplashScreenState extends State<SplashScreen> with SingleTickerProviderSt
 
     if (!mounted) return;
 
-    if (auth.isAuthenticated && auth.user != null) {
-      final user = auth.user!;
-      switch (user.role) {
-        case UserRole.donor:
-          if (user.donorCategory?.toLowerCase().contains('restaurant') == true) {
-            context.go('/restaurant-donor');
-          } else {
-            context.go('/donor');
-          }
-          break;
-        case UserRole.ngo:
-          context.go('/ngo');
-          break;
-        case UserRole.volunteer:
-          context.go('/volunteer');
-          break;
-        case UserRole.admin:
-          context.go('/admin');
-          break;
-      }
-    } else {
-      context.go('/onboarding');
+    // First launch: ask for runtime permissions before proceeding.
+    var permissionsRequested = false;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      permissionsRequested =
+          prefs.getBool(PermissionRequestScreen.storageKey) ?? false;
+    } catch (_) {}
+
+    if (!mounted) return;
+
+    if (!permissionsRequested) {
+      context.go('/permissions');
+      return;
     }
+
+    context.go(resolveInitialRoute(auth));
   }
 
   @override

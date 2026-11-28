@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../../features/onboarding/presentation/splash_screen.dart';
 import '../../features/onboarding/presentation/onboarding_screen.dart';
+import '../../features/onboarding/presentation/permission_request_screen.dart';
 import '../../features/authentication/presentation/login_screen.dart';
 import '../../features/authentication/presentation/register_screen.dart';
 import '../../features/authentication/presentation/otp_verification_screen.dart';
@@ -63,6 +64,10 @@ class AppRouter {
         GoRoute(
           path: '/onboarding',
           builder: (context, state) => const OnboardingScreen(),
+        ),
+        GoRoute(
+          path: '/permissions',
+          builder: (context, state) => const PermissionRequestScreen(),
         ),
         GoRoute(
           path: '/login',
