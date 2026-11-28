@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/theme_provider.dart';
+import '../../../core/widgets/app_update_dialog.dart';
 import '../../../core/widgets/exit_confirmation_dialog.dart';
 import '../../../core/widgets/donation_image_widget.dart';
 import '../../../core/utils/avatar_image_helper.dart';
@@ -35,6 +36,7 @@ class _NgoDashboardScreenState extends State<NgoDashboardScreen> {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       TermsAndConditionsModal.showIfNeeded(context);
+      AppUpdateDialog.showIfAvailable(context);
     });
   }
 

@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/utils/avatar_image_helper.dart';
 import '../../../core/theme/theme_provider.dart';
 import '../../../core/widgets/fb_appearance_selector.dart';
+import '../../../core/widgets/app_update_dialog.dart';
 import '../../../core/widgets/fb_button.dart';
 import '../../authentication/presentation/auth_provider.dart';
 import '../../authentication/presentation/widgets/terms_and_conditions_modal.dart';
@@ -217,6 +218,25 @@ class ProfileScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
+          Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            child: ListTile(
+              leading: const Icon(Icons.system_update_rounded, color: AppColors.primaryGreen),
+              title: const Text(
+                'Check for Updates (अ‍ॅप अपडेट तपासा)',
+                style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+              ),
+              subtitle: const Text(
+                'नवीन व्हर्जन व सुधारणा थेट 1-टॅपमध्ये अपडेट करा',
+                style: TextStyle(fontSize: 12, color: AppColors.mutedGrey),
+              ),
+              trailing: const Icon(Icons.chevron_right, size: 20, color: AppColors.mutedGrey),
+              onTap: () {
+                AppUpdateDialog.showIfAvailable(context, showToastIfUpToDate: true);
+              },
+            ),
+          ),
+          const SizedBox(height: 12),
           Card(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
             child: ListTile(

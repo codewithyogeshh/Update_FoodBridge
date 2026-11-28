@@ -60,8 +60,8 @@ jobs:
       - name: Publish APK to GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.0
-          name: FoodBridge 1.0.0 - Android APK
+          tag_name: v1.0.1
+          name: FoodBridge 1.0.1 - Android APK
           body: |
             Installable Android build of FoodBridge (Flutter + Supabase).
 

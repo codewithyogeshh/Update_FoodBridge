@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../../core/localization/app_translations.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/theme_provider.dart';
+import '../../../core/widgets/app_update_dialog.dart';
 import '../../../core/widgets/exit_confirmation_dialog.dart';
 import '../../../core/widgets/fb_appearance_selector.dart';
 import '../../../core/widgets/scooter_courier_illustration.dart';
@@ -28,6 +29,14 @@ class VolunteerDashboardScreen extends StatefulWidget {
 
 class _VolunteerDashboardScreenState extends State<VolunteerDashboardScreen> {
   String _selectedTab = 'ready_pickup'; // 'ready_pickup', 'unclaimed', 'all'
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      AppUpdateDialog.showIfAvailable(context);
+    });
+  }
 
   String _formatPickupLocation(String address, String city) {
     final cleanAddr = address.trim();
